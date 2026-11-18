@@ -1,11 +1,6 @@
 import { Marked, type Token, type Tokens } from 'marked'
-import {
-  type Component,
-  type DefaultTextStyle,
-  type MarkdownTheme,
-  visibleWidth,
-  wrapTextWithAnsi,
-} from '@earendil-works/pi-tui'
+import type { Component, DefaultTextStyle, MarkdownTheme } from '../core/contracts.ts'
+import { visibleWidth, wrapTextWithAnsi } from '../core/textMetrics.ts'
 
 interface InlineStyleContext {
   applyText: (text: string) => string

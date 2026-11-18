@@ -1,4 +1,5 @@
-import { Container, Text, truncateToWidth } from '@earendil-works/pi-tui'
+import { Container, Text } from '../core/widgets.ts'
+import { truncateToWidth } from '../core/textMetrics.ts'
 import chalk from 'chalk'
 import { theme } from '../theme.ts'
 import {

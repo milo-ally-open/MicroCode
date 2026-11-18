@@ -1,4 +1,4 @@
-import { type Component, type DefaultTextStyle, type MarkdownTheme } from '@earendil-works/pi-tui'
+import type { Component, DefaultTextStyle, MarkdownTheme } from '../core/contracts.ts'
 import { Markdown } from './markdown.ts'
 
 /** Adds a compact chat marker and a hanging indent to rendered Markdown. */

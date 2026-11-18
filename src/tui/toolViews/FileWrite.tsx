@@ -1,4 +1,4 @@
-import { Box, Container, Text } from '@earendil-works/pi-tui'
+import { Box, Container, Text } from '../core/widgets.ts'
 import { theme } from '../theme.ts'
 import { numberDiffLines, renderChangeSummary, renderTerminalDiffLine } from '../../utils/diffUtils.ts'
 import {

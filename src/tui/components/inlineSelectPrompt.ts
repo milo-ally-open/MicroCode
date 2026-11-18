@@ -1,4 +1,6 @@
-import { Container, SelectList, Text } from '@earendil-works/pi-tui'
+import { Container, Text } from '../core/widgets.ts'
+import type { InputEvent } from '../core/contracts.ts'
+import { SelectList } from '../core/selectList.ts'
 
 /** Select prompt that remains in the turn timeline after it is answered. */
 export class InlineSelectPrompt extends Container {
@@ -16,8 +18,8 @@ export class InlineSelectPrompt extends Container {
     this.addChild(choices)
   }
 
-  handleInput(data: string): void {
-    if (this.choicesVisible) this.choices.handleInput(data)
+  handleInput(input: string | InputEvent): void {
+    if (this.choicesVisible) this.choices.handleInput(input)
   }
 
   isTranscriptRenderStable(): boolean {

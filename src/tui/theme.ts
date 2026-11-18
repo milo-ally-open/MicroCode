@@ -1,5 +1,5 @@
 import chalk from 'chalk'
-import type { MarkdownTheme } from '@earendil-works/pi-tui'
+import type { MarkdownTheme } from './core/contracts.ts'
 
 // Color constants matching pi-coding-agent dark theme
 const COLORS = {

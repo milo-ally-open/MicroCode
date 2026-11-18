@@ -1,4 +1,4 @@
-import { Box, Container, Text } from '@earendil-works/pi-tui'
+import { Box, Container, Text } from '../core/widgets.ts'
 import { theme } from '../theme.ts'
 import { formatCompletedStatus, formatRunningStatus, formatToolLabel, getProgressFrame } from '../toolPresentation.ts'
 import { ToolPreviewController } from '../toolPreviewController.ts'

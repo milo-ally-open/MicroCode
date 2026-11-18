@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test'
-import { visibleWidth } from '@earendil-works/pi-tui'
+import { visibleWidth } from '../../src/tui/core/textMetrics.ts'
 import { boundedTextPreview, oneLine, textFromToolResult } from '../../src/tui/toolPreview.ts'
 
 describe('tool preview text', () => {

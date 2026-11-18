@@ -1,4 +1,5 @@
-import { Container, type MarkdownTheme } from '@earendil-works/pi-tui'
+import type { MarkdownTheme } from '../core/contracts.ts'
+import { Container } from '../core/widgets.ts'
 import { getMarkdownTheme, theme } from '../theme.ts'
 import { MarkedMarkdown } from './markedMarkdown.ts'
 

@@ -1,4 +1,4 @@
-import { Container, Text } from '@earendil-works/pi-tui'
+import { Container, Text } from '../core/widgets.ts'
 import { theme, getMarkdownTheme } from '../theme.ts'
 import { MarkedMarkdown } from './markedMarkdown.ts'
 

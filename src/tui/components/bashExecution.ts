@@ -1,4 +1,4 @@
-import { Container, Loader, Spacer, Text, type TUI } from '@earendil-works/pi-tui'
+import { Container, Loader, Spacer, Text, type RenderScheduler } from '../core/widgets.ts'
 import { theme } from '../theme.ts'
 
 /**
@@ -14,7 +14,7 @@ export class BashExecutionComponent extends Container {
   private completed = false
   private onRenderInvalidated?: () => void
 
-  constructor(command: string, ui: TUI, excludeFromContext = false) {
+  constructor(command: string, ui: RenderScheduler, excludeFromContext = false) {
     super()
 
     // Use dim border for excluded-from-context commands (!! prefix)
@@ -73,7 +73,12 @@ export class BashExecutionComponent extends Container {
     this.exitCode = exitCode
     this.cancelled = cancelled
     this.completed = true
+    this.loader.stop()
     this.updateDisplay()
+  }
+
+  stop(): void {
+    this.loader.stop()
   }
 
   private updateDisplay(): void {

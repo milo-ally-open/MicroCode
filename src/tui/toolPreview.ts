@@ -1,5 +1,5 @@
 import type { ToolResult } from './toolPresentationRegistry.ts'
-import { truncateToWidth } from '@earendil-works/pi-tui'
+import { truncateToWidth } from './core/textMetrics.ts'
 import { normalizeTerminalText } from '../utils/terminalText.ts'
 
 export interface BoundedPreview {

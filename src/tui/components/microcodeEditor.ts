@@ -1,4 +1,4 @@
-import { Editor, type EditorOptions, type EditorTheme, type TUI } from '@earendil-works/pi-tui'
+import { Editor, type EditorOptions, type EditorTheme, type TUI } from '../core/legacyPiAdapter.ts'
 import chalk from 'chalk'
 import { highlightSkillMentions } from '../skillMentions.ts'
 import { highlightWorkspaceFileMentions } from '../workspaceFiles.ts'

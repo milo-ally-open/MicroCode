@@ -1,4 +1,5 @@
-import { Container, Spacer, Text, type Component } from '@earendil-works/pi-tui'
+import type { Component } from '../core/contracts.ts'
+import { Container, Spacer, Text } from '../core/widgets.ts'
 import chalk from 'chalk'
 import type { ToolInteractionTarget, ToolUIComponent } from '../toolPresentationRegistry.ts'
 

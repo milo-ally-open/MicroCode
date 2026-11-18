@@ -1,5 +1,6 @@
-import type { Component } from '@earendil-works/pi-tui'
-import { getKeybindings, truncateToWidth, visibleWidth } from '@earendil-works/pi-tui'
+import type { Component, InputEvent } from '../core/contracts.ts'
+import { matchesTuiAction } from '../core/keybindings.ts'
+import { truncateToWidth, visibleWidth } from '../core/textMetrics.ts'
 
 export interface MultiSelectItem {
   value: string
@@ -27,6 +28,7 @@ export interface MultiSelectListTheme {
 export class MultiSelectList implements Component {
   private readonly selected = new Set<number>()
   private cursorIndex = 0
+  focused = false
 
   onConfirm?: (items: MultiSelectItem[]) => void
   onCancel?: () => void
@@ -162,29 +164,29 @@ export class MultiSelectList implements Component {
     return lines
   }
 
-  handleInput(data: string): void {
-    const kb = getKeybindings()
-
-    if (kb.matches(data, 'tui.select.up')) {
+  handleInput(input: string | InputEvent): void {
+    const data = typeof input === 'string' ? input : input.type === 'key' ? input.raw : undefined
+    if (data === undefined) return
+    if (matchesTuiAction(data, 'select.up')) {
       this.cursorIndex =
         this.cursorIndex === 0
           ? this.items.length - 1
           : this.cursorIndex - 1
       this.ensureCursorOnEnabled('up')
-    } else if (kb.matches(data, 'tui.select.down')) {
+    } else if (matchesTuiAction(data, 'select.down')) {
       this.cursorIndex =
         this.cursorIndex === this.items.length - 1
           ? 0
           : this.cursorIndex + 1
       this.ensureCursorOnEnabled('down')
-    } else if (kb.matches(data, 'tui.select.confirm')) {
+    } else if (matchesTuiAction(data, 'select.confirm')) {
       const selectedItems: MultiSelectItem[] = []
       for (const idx of this.selected) {
         const item = this.items[idx]
         if (item) selectedItems.push(item)
       }
       this.onConfirm?.(selectedItems)
-    } else if (kb.matches(data, 'tui.select.cancel')) {
+    } else if (matchesTuiAction(data, 'select.cancel')) {
       this.onCancel?.()
     } else if (data === ' ') {
       const item = this.items[this.cursorIndex]

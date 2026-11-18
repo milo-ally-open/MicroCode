@@ -453,10 +453,13 @@ class GatewayRequestHandler {
         const session = authSessions.get(sessionId)
         const pending = session?.pending.get(promptId)
         if (!session || !pending) return errorResponse(404, 'Auth prompt is no longer pending.')
-        session.pending.delete(promptId)
-        if (value.cancel === true) pending.reject(new Error('Authentication cancelled.'))
-        else if (typeof value.value === 'string' && value.value.length <= 16_384) pending.resolve(value.value)
-        else return errorResponse(400, 'Auth prompt response must be a string no longer than 16384 characters.')
+        if (value.cancel === true) {
+          session.pending.delete(promptId)
+          pending.reject(new Error('Authentication cancelled.'))
+        } else if (typeof value.value === 'string' && value.value.length <= 16_384) {
+          session.pending.delete(promptId)
+          pending.resolve(value.value)
+        } else return errorResponse(400, 'Auth prompt response must be a string no longer than 16384 characters.')
         return json({ accepted: true })
       }
 

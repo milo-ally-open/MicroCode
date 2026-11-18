@@ -1,4 +1,6 @@
-import { matchesKey, type Component, visibleWidth } from '@earendil-works/pi-tui'
+import type { Component } from '../core/contracts.ts'
+import { matchesKey } from '../core/inputDecoder.ts'
+import { visibleWidth } from '../core/textMetrics.ts'
 import { theme } from '../theme.ts'
 import type { ToolInteractionTarget } from '../toolPresentationRegistry.ts'
 

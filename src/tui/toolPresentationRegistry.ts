@@ -1,4 +1,4 @@
-import type { Component } from '@earendil-works/pi-tui'
+import type { Component } from './core/contracts.ts'
 import { basename, formatBytes, preview, shortUrl } from '../utils/displayUtils.ts'
 import { countLines } from '../utils/textUtils.ts'
 import { FileEditToolUI } from './toolViews/FileEdit.tsx'

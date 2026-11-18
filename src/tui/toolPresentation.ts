@@ -1,5 +1,5 @@
 import chalk from 'chalk'
-import { visibleWidth } from '@earendil-works/pi-tui'
+import { visibleWidth } from './core/textMetrics.ts'
 export { countContentLines } from '../utils/textUtils.ts'
 
 const TOOL_LABEL_COLUMN_WIDTH = 12

@@ -1,4 +1,4 @@
-import { visibleWidth } from '@earendil-works/pi-tui'
+import { visibleWidth } from './core/textMetrics.ts'
 import type { ToolInteractionTarget } from './toolPresentationRegistry.ts'
 
 /** Shared collapsed-by-default state for tool output previews. */

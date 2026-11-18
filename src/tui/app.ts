@@ -1,15 +1,12 @@
 import {
   TUI,
   ProcessTerminal,
-  Container,
-  Text,
-  Spacer,
-  SelectList,
-  type SelectItem,
-  type Component,
   type AutocompleteProvider,
   type SlashCommand,
-} from '@earendil-works/pi-tui'
+} from './core/legacyPiAdapter.ts'
+import { Container, Spacer, Text } from './core/widgets.ts'
+import type { Component } from './core/contracts.ts'
+import { SelectList, type SelectItem } from './core/selectList.ts'
 import chalk from 'chalk'
 import { createTwoFilesPatch } from 'diff'
 import type { ChildProcessWithoutNullStreams } from 'child_process'
@@ -4327,6 +4324,7 @@ export class App {
     if (this.activeBashProcess) {
       this.cancelBashCommand()
     }
+    this.bashComponent?.stop()
     if (this.toolElapsedTimer) {
       clearInterval(this.toolElapsedTimer)
       this.toolElapsedTimer = undefined

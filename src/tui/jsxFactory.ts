@@ -10,7 +10,8 @@
  * Component functions receive props and return a Component.
  * Fragments are flattened into the parent container.
  */
-import { Text, Box, Container, Spacer, type Component } from '@earendil-works/pi-tui'
+import type { Component } from './core/contracts.ts'
+import { Text, Box, Container, Spacer } from './core/widgets.ts'
 
 type Props = Record<string, any> & { children?: any }
 

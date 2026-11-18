@@ -1,4 +1,5 @@
-import { type Component, visibleWidth } from '@earendil-works/pi-tui'
+import type { Component } from '../core/contracts.ts'
+import { visibleWidth } from '../core/textMetrics.ts'
 import { COMPACT_LOGO_LINES, LOGO_LINES } from '../logo.ts'
 import { theme } from '../theme.ts'
 

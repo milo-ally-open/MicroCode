@@ -1,4 +1,5 @@
-import { type Component, truncateToWidth, visibleWidth } from '@earendil-works/pi-tui'
+import type { Component } from '../core/contracts.ts'
+import { truncateToWidth, visibleWidth } from '../core/textMetrics.ts'
 import chalk from 'chalk'
 import { GitBranchReader } from '../../git/index.ts'
 import type { TuiAgentPort } from '../agentPort.ts'
