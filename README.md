@@ -82,8 +82,8 @@ To launch Microcode in the project you want to work on, first change to that pro
 For local development, clone the repository and install the locked dependencies:
 
 ```bash
-git clone https://github.com/milo-ally/microcode.git
-cd microcode
+git clone https://github.com/milo-ally-open/MicroCode.git
+cd MicroCode
 bun install --frozen-lockfile
 bun run dev
 ```
