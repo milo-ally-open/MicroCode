@@ -76,6 +76,11 @@ describe('Model Gateway daemon lifecycle', () => {
       runCli(['gateway', 'start', '--gateway-port', String(port)], env),
       runCli(['gateway', 'start', `--gateway-port=${port}`], env),
     ])
+    const failedStart = first.code === 0 ? (second.code === 0 ? undefined : ['second', second]) : ['first', first]
+    if (failedStart) {
+      const [label, result] = failedStart
+      throw new Error(`${label} concurrent gateway start exited with ${result.code}.\nstdout:\n${result.stdout}\nstderr:\n${result.stderr}`)
+    }
     expect(first.code).toBe(0)
     expect(second.code).toBe(0)
     expect(first.stdout).toContain('Model Gateway handshake successful')
