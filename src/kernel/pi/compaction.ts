@@ -1,5 +1,4 @@
-import { BACKGROUND_CONTEXT, generateSummary } from '@earendil-works/pi-agent-core'
-import type { Api, Model, Models } from '@earendil-works/pi-ai'
+import type { Api, Context, Model, Models } from '@earendil-works/pi-ai'
 import type { AgentMessage } from '@earendil-works/pi-agent-core'
 import {
   restoreLegacyCompactionContext,
@@ -101,20 +100,39 @@ export function createPiCompactionSummarizer(options: {
   getModel: () => Model<Api>
 }): CompactionSummaryGenerator<AgentMessage> {
   return async (messages, summaryOptions) => {
-    const result = await generateSummary(
-      [...messages] as AgentMessage[],
-      options.models,
-      options.getModel(),
-      summaryOptions.reserveTokens,
-      summaryOptions.instructions,
-      undefined,
-      undefined,
-      undefined,
-      undefined,
-      BACKGROUND_CONTEXT,
-    )
-    return result.ok
-      ? { ok: true, value: result.value }
-      : { ok: false, error: { message: result.error.message } }
+    const model = options.getModel()
+    const transcript = messages.map((message) => {
+      const role = message.role === 'assistant' ? 'Assistant' : message.role === 'toolResult' ? `Tool (${message.toolName})` : 'User'
+      const content = message.role === 'assistant'
+        ? message.content.map((block) => block.type === 'text' ? block.text : block.type === 'toolCall'
+          ? `[tool call ${block.name}: ${JSON.stringify(block.arguments)}]`
+          : block.type === 'thinking' ? '' : '[image]').filter(Boolean).join('\n')
+        : message.role === 'toolResult'
+          ? message.content.filter((block) => block.type === 'text').map((block) => block.text).join('\n')
+          : typeof message.content === 'string' ? message.content
+            : message.content.map((block) => block.type === 'text' ? block.text : '[image]').join('\n')
+      return `${role}: ${content}`
+    }).join('\n\n')
+    const context: Context = {
+      systemPrompt: [
+        'Summarize the earlier conversation for an AI coding assistant continuing the work.',
+        'Preserve user goals, decisions, constraints, important code facts, unresolved questions, and exact identifiers or paths that matter.',
+        'Do not invent facts. Keep the summary concise and directly usable as context.',
+        summaryOptions.instructions,
+      ].filter(Boolean).join('\n\n'),
+      messages: [{ role: 'user', content: transcript, timestamp: Date.now() }],
+    }
+    try {
+      const result = await options.models.completeSimple(model, context, {
+        maxTokens: Math.max(256, Math.min(model.maxTokens, summaryOptions.reserveTokens)),
+      })
+      if (result.stopReason === 'error' || result.stopReason === 'aborted') {
+        return { ok: false, error: { message: result.errorMessage ?? `Summarization ${result.stopReason}.` } }
+      }
+      const text = result.content.filter((block) => block.type === 'text').map((block) => block.text).join('\n').trim()
+      return text ? { ok: true, value: text } : { ok: false, error: { message: 'Summarization returned no text.' } }
+    } catch (error) {
+      return { ok: false, error: { message: error instanceof Error ? error.message : String(error) } }
+    }
   }
 }

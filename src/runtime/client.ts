@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto'
 import { RuntimeServiceClient, RuntimeServiceClientError, RuntimeSnapshotRequiredError } from './transportClient.ts'
 import type { RuntimeAgentSnapshot, RuntimeCommandType, RuntimeEventEnvelope } from './contracts.ts'
 
@@ -66,14 +67,14 @@ export class RuntimeClientSession {
     return this.snapshotValue
   }
 
-  async sendCommand<T = unknown>(type: RuntimeCommandType, payload: Record<string, unknown> = {}): Promise<T> {
+  async sendCommand<T = unknown>(type: RuntimeCommandType, payload: Record<string, unknown> = {}, requestId: string = randomUUID()): Promise<T> {
     if (!this.started) await this.start()
     if (this.closed) throw new RuntimeServiceClientError('Runtime client session is closed.', 409, 'session_closed')
     const previousSessionId = this.sessionIdValue
     let sessionChanged = false
     let result: T
     try {
-      result = await this.client.sendCommand<T>(this.sessionIdValue, type, payload, undefined, this.controller.signal)
+      result = await this.client.sendCommand<T>(this.sessionIdValue, type, payload, requestId, this.controller.signal)
     } catch (error) {
       if (type !== 'tool.set' || !(error instanceof RuntimeServiceClientError) || error.code !== 'stale_tool_snapshot') throw error
       const snapshot = await this.refreshSnapshot(this.controller.signal, true)

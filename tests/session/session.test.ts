@@ -6,6 +6,7 @@ import { estimateMessagesTokens, estimateTokens } from '../../src/session/TokenE
 import { PiJsonlSessionStore, piSessionTranscriptAdapter, replacePiImageBlocksForPersistence } from '../../src/kernel/pi/session.ts'
 import { SessionManager } from '../../src/session/SessionManager.ts'
 import { getAllModels } from '../../src/models/index.ts'
+import { toRuntimeMessage } from '../../src/kernel/pi/mapper.ts'
 
 describe('session modules', () => {
   const createManager = (options: { sessionsRoot?: string; tasksRoot?: string } = {}) => new SessionManager({
@@ -102,6 +103,27 @@ describe('session modules', () => {
       expect((messages[1] as any).content[0].text).toBe('A response from the legacy transcript.')
       expect((await manager.loadArchiveEntries()).filter((entry) => entry.type === 'message')).toHaveLength(2)
       expect(await readFile(sessionPath)).toEqual(originalBytes)
+    } finally {
+      await manager.close()
+      await rm(dir, { recursive: true, force: true })
+    }
+  })
+
+  test('normalizes removed Pi harness message roles at the MicroCode session boundary', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'microcode-session-legacy-roles-'))
+    const manager = createManager({ sessionsRoot: join(dir, 'sessions') })
+    try {
+      await manager.create(join(dir, 'workspace'))
+      await manager.saveMessages([
+        { role: 'bashExecution', command: 'pwd', output: 'workspace', timestamp: 1 },
+        { role: 'custom', customType: 'task-reminder', content: 'Finish the task', display: false, timestamp: 2 },
+      ] as any)
+
+      const [command, reminder] = await manager.loadMessages() as any[]
+      expect(command).toMatchObject({ role: 'user', microcodeKind: 'command_activity' })
+      expect(toRuntimeMessage(command)).toMatchObject({ role: 'command_activity', command: 'pwd', output: 'workspace' })
+      expect(reminder).toMatchObject({ role: 'user', microcodeKind: 'task-reminder' })
+      expect(toRuntimeMessage(reminder)).toMatchObject({ role: 'custom', kind: 'task-reminder', display: false })
     } finally {
       await manager.close()
       await rm(dir, { recursive: true, force: true })

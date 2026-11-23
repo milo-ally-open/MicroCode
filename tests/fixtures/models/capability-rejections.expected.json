@@ -10,5 +10,12 @@
     "feature": "reasoning",
     "status": 400,
     "message": "The selected model does not support reasoning controls."
+  },
+  {
+    "modelId": "openai/gpt-6.2-astra",
+    "feature": "reasoning_level",
+    "level": "minimal",
+    "status": 400,
+    "message": "The selected model does not support the \"minimal\" reasoning level."
   }
 ]

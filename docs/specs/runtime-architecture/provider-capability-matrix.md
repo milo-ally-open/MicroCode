@@ -1,13 +1,13 @@
 # Model provider capability matrix
 
-This matrix describes the statically registered upstream model providers in `src/models/providers/` and the metadata exposed by the pinned `pi-ai` catalog. The current dependency is `@earendil-works/pi-ai` 0.87.1. Counts are a snapshot of that package's catalog and change only when the dependency or the reviewed adapter changes.
+This matrix describes the statically registered upstream model providers in `src/models/providers/` and the metadata exposed by the pinned `pi-ai` catalog. The current paired dependencies are `@earendil-works/pi-ai` and `@earendil-works/pi-agent-core` 1.6.0. Counts are a snapshot of that package's catalog and change only when the dependency or the reviewed adapter changes.
 
 ## Upstream providers
 
 | Microcode provider ID | Authentication | Upstream API | Current catalog snapshot | Capability source |
 |---|---|---|---|---|
-| `openai-codex` | OAuth only | `openai-codex-responses` | 8 models | The pinned Codex provider catalog; each model's `input`, `reasoning`, context window, and output limit are returned by `getModelCatalog()`. |
-| `openai` | API key only | `openai-responses` | 34 models | The pinned OpenAI catalog filtered to IDs starting with `gpt-`, excluding `gpt-realtime-*`; capabilities are per model. |
+| `openai-codex` | OAuth only | `openai-codex-responses` | 10 models | The pinned Codex provider catalog; each model's `input`, `reasoning`, reasoning-level map, context window, and output limit are returned by `getModelCatalog()`. Includes GPT-6.2 Sol (500k context) and Astra (272k). |
+| `openai` | API key only | `openai-responses` | 40 models | The pinned OpenAI catalog filtered to IDs starting with `gpt-`, excluding `gpt-realtime-*`; capabilities are per model. GPT-6.2 maps `minimal` to unsupported. |
 | `deepseek` | API key only | `openai-completions` | 2 models: `deepseek-flash`, `deepseek-v4-pro` | The pinned DeepSeek provider catalog; current metadata marks both as reasoning-capable, while image input is model-specific. |
 
 The counts and feature flags above are catalog metadata, not a guarantee that every account, deployment, or future model endpoint supports every operation. Callers must use the selected model descriptor for image input, reasoning, context window, and output limits. The registry rejects provider IDs outside this table and validates each adapter's declared auth modes and APIs against its factory catalog.
@@ -16,7 +16,7 @@ The reviewed registrations are in `src/models/providers/openai-codex.ts`, `opena
 
 ## Fixed provider/API fixtures
 
-`tests/fixtures/models/provider-capabilities.expected.json` pins representative capability metadata from pi-ai 0.87.1 across all three allowed API combinations. It includes image-capable and text-only DeepSeek models plus the OpenAI GPT-4o reasoning-negative case. `tests/models/providerCapabilityFixtures.test.ts` checks the fixture against `getModelCatalog()`, exercises OpenAI and DeepSeek API-key login plus an offline Codex OAuth login fixture, and confirms secrets do not appear in status DTOs. The paired rejection fixture verifies that image input to `deepseek/deepseek-v4-pro` and reasoning controls to `openai/gpt-4o` fail before inference begins. `tests/models/providerRuntime.test.ts` runs a real pinned DeepSeek adapter against a local SSE stub and verifies the authorization header, selected model, text event, and reported usage.
+`tests/fixtures/models/provider-capabilities.expected.json` pins representative capability metadata from pi-ai 1.6.0 across all three allowed API combinations, including GPT-6.2 Sol/Astra reasoning-level maps. `tests/models/providerCapabilityFixtures.test.ts` checks the fixture against `getModelCatalog()`, exercises OpenAI and DeepSeek API-key login plus an offline Codex OAuth login fixture, and confirms secrets do not appear in status DTOs. Rejection fixtures verify that image input to `deepseek/deepseek-v4-pro`, reasoning controls to `openai/gpt-4o`, and `minimal` reasoning for `openai/gpt-6.2-astra` fail before inference begins. `tests/models/providerRuntime.test.ts` runs the pinned DeepSeek adapter against a local SSE stub and verifies the authorization header, selected model, text event, and reported usage.
 
 These fixtures establish registered metadata and facade behavior for each provider/API/auth combination. They do not make live Codex or OpenAI upstream requests; OAuth and auth lifecycle tests use local fixtures.
 

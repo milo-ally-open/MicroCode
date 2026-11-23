@@ -71,16 +71,15 @@ export function createPiAgentRuntimeAdapter(
       return result.content.find((content) => content.type === 'text')?.text?.trim().replace(/^['"]|['"]$/g, '') ?? ''
     },
     isTaskReminderMessage(message) {
-      return message.role === 'custom' && message.customType === 'task-reminder'
+      return message.role === 'user' && (message as AgentMessage & { microcodeKind?: string }).microcodeKind === 'task-reminder'
     },
     createTaskReminderMessage(reminder) {
       return {
-        role: 'custom',
-        customType: 'task-reminder',
+        role: 'user',
         content: reminder,
-        display: false,
         timestamp: Date.now(),
-      }
+        microcodeKind: 'task-reminder',
+      } as AgentMessage
     },
     toTokenEstimatorMessage(message) {
       return message as TokenEstimatorMessage

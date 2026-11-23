@@ -13,7 +13,7 @@ Microcode is a terminal-native AI coding assistant for understanding and changin
 - `src/tui/` — terminal UI and runtime-facing adapters.
 - `src/tools/`, `src/models/`, `src/permissions/`, `src/session/` — tools, model integration, permissions, and session persistence.
 - `src/mcp/`, `src/plugins/`, `src/skill/` — capability integrations.
-- `docs/specs/` — product and architecture specifications. For runtime/model integration, consult `docs/specs/runtime-architecture/spec.md` and `docs/specs/model_intergration_spec.md`.
+- `docs/specs/` — product and architecture specifications. For Runtime/model integration, consult `docs/specs/runtime-architecture/spec.md`; for the independent GUI frontend and ACP Agent protocol, consult `docs/specs/agent-gui-workbench/spec.md` and `docs/specs/acp-agent/spec.md`.
 - `tests/` — unit and integration tests, organized by feature.
 
 ## Commands

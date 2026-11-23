@@ -1,9 +1,19 @@
 # 实施任务：Microcode 运行时架构重构
 
 > 关联规格：[spec.md](spec.md)；设计：[design.md](design.md)<br>
-> 当前状态：T-01 至 T-13 已完成。Provider/API 和四协议验收证据、固定版本客户端 smoke、最终回归及已知兼容边界见本页完成摘要与配套能力矩阵。
+> 当前状态：T-01 至 T-17 已完成；T-18 等新 Pi 版本候选 release notes、tag 产物验收与回退材料。
 
 ## 任务清单
+
+## 下一版本计划（未实施）
+
+### 4. Pi 升级与 CI/CD
+
+- [x] **T-14 核验并锁定 Pi 升级版本** — 覆盖 REQ-01、REQ-03、REQ-09；AC：AC-01.3、AC-03.1、AC-09.1。核对上游 `v1.6.0` tag、配套包版本、Codex provider/model catalog 和 exports；`pi-ai` 与 `pi-agent-core` 均精确锁定为 `1.6.0`，不使用浮动版本或运行时目录。Pi 1.6 移除了 experimental harness/session 与 filesystem/summary helper；MicroCode 保留本地 JSONL v3/session/compaction adapter，未引入 experimental `pi-durable`。
+- [x] **T-15 更新模型能力与 Pi adapter 验收** — 覆盖 REQ-01、REQ-03、REQ-08、REQ-09；AC：AC-01.1、AC-03.1、AC-03.4、AC-08.1、AC-09.2、AC-09.5、AC-09.6。固定 GPT-6.2 Sol/Astra 的 modality、reasoning-level map、context/output metadata；保留 Codex OAuth 与 OpenAI API-key 白名单；未支持的 GPT-6.2 OpenAI `minimal` 在 inference 前拒绝。MicroCode session adapter 读取历史 v3 JSONL 并规范化已移除的 Pi message roles；compaction 调用锁定 Pi 1.6 `completeSimple`。全量 tests 覆盖 auth 脱敏、stream/tool/message mapping、compaction、取消、session/no-daemon，未访问 Codex/OpenAI 上游。
+- [x] **T-16 建立 PR CI 工作流** — 覆盖 REQ-08、REQ-09；AC：AC-08.3、AC-08.4、AC-09.3、AC-09.5。GitHub Actions 固定 Bun、frozen lockfile 和 SHA pin actions；执行类型检查、tests、规格 validator 与 Linux/Windows/macOS `build --no-install`；已由 GitHub CI 成功验收。
+- [x] **T-17 建立版本 tag 发布工作流** — 覆盖 REQ-09；AC：AC-09.4、AC-09.5。`.github/workflows/release.yml` 已完成六个平台/架构原生构建、版本匹配、CLI 启动检查、SHA-256 校验和与 Release 发布；`v0.1.0` 实际 workflow 全部成功，Release 含六个 archive 和对应六个 checksum。
+- [ ] **T-18 完成新版本发布验收材料** — 覆盖 REQ-03、REQ-08、REQ-09；AC：AC-03.1、AC-03.4、AC-08.4、AC-09.2、AC-09.4、AC-09.6。更新 release notes、支持模型与认证说明、CI/CD 操作说明；对候选产物做干净环境启动/版本检查及回退演练，明确 live Codex 验收是否执行。
 
 ### 0. 基线与合同
 
@@ -12,7 +22,7 @@
 ### 1. 内核与模型
 
 - [x] **T-02 建立 Pi Kernel adapter 与 runtime domain contract** — 覆盖 REQ-01、REQ-02；AC：AC-01.1、AC-01.2、AC-01.3、AC-02.1、AC-02.2、AC-02.3。Pi Agent/model/message/event 映射、Pi-free Agent/runtime DTO、权限与 session ports、版本化服务 DTO 已建立。`MicrocodeAgent` 通过 `AgentRuntimeAdapter` 组合当前 Pi kernel；非 Pi adapter contract、Pi composition boundary、跨路径 transcript 与 runtime host 均有测试。完成表示内核边界和当前 Pi adapter 已验收，不表示已经替换 Pi 或提供第二个生产内核。
-- [x] **T-03 建立 provider registry 并应用初始 allowlist** — 覆盖 REQ-03、REQ-08；AC：AC-03.1、AC-03.2、AC-03.3、AC-03.4、AC-08.2、AC-08.3、AC-08.4。`provider-capabilities.expected.json` 固定 pi-ai 0.87.1 下三项 allowlisted provider/API 的认证模式及代表模型 modality、reasoning、context/output metadata；测试覆盖 OpenAI/DeepSeek API-key、离线 Codex OAuth 生命周期、DeepSeek usage，以及不支持图像或 reasoning 时在 inference 前拒绝。Codex/OpenAI 不发起真实上游请求。
+- [x] **T-03 建立 provider registry 并应用初始 allowlist** — 覆盖 REQ-03、REQ-08；AC：AC-03.1、AC-03.2、AC-03.3、AC-03.4、AC-08.2、AC-08.3、AC-08.4。初始 registry 与 auth policy 建立于 pi-ai 0.87.1；T-14/T-15 已将锁定 catalog 与 fixture 迁到 1.6.0。当前 fixture 固定三项 allowlisted provider/API 的认证模式及代表模型 modality、reasoning-level map、context/output metadata；测试覆盖 OpenAI/DeepSeek API-key、离线 Codex OAuth 生命周期、DeepSeek usage，以及不支持图像、reasoning 或 GPT-6.2 OpenAI `minimal` 时在 inference 前拒绝。Codex/OpenAI 不发起真实上游请求。
 - [x] **T-04 将四个客户端协议与 provider facade 解耦** — 覆盖 REQ-04；AC：AC-04.1、AC-04.2、AC-04.3、AC-04.4、AC-04.5。固定 fixtures 覆盖四协议工具调用/结果归一与输出、SSE 事件顺序、请求拒绝、流错误和客户端断开取消；固定 OpenAI Node SDK 6.40.0 对本地 fake runtime Gateway 成功完成 Chat Completions 请求。可选 Codex CLI smoke 仍单独记录为 hosted `custom` tool 安全拒绝，不代表该工具已受支持。
 
 ### 2. 工具和能力
@@ -172,3 +182,10 @@
 - 定位：`RuntimeClientSession` 在每次失败重试中的快照刷新失败都调用 `notifyConnection(false)`；该方法原先无状态去重。TUI 再用 `showStatus()` 为每次断开/恢复向转录追加新行。
 - 修复：连接 session 在状态不变时不再重复通知；SSE response 建立后即报告恢复。TUI 用单条可更新状态行替代重复追加。
 - `bun test ./tests/daemon/runtime-client.test.ts ./tests/daemon/runtime-service.test.ts ./tests/tui/runtime-view-contract.test.ts`：17 pass、0 fail、71 expectations；`bunx tsc --noEmit` 通过；`git diff --check` 通过。Build 未运行。
+
+## 2026-11-24 Pi 1.6.0 与 GPT-6.2 迁移验收
+
+- T-14/T-15 已完成：`@earendil-works/pi-ai` 和 `@earendil-works/pi-agent-core` 精确锁定 1.6.0；GPT-6.2 Sol/Astra 的 Codex 和 OpenAI model descriptors / reasoning-level map 固定在 fixture；OpenAI GPT 仍是 API-key-only，Codex 仍是 OAuth-only。Pi 1.6 移除的 session/filesystem/summary helpers 由 MicroCode kernel adapter 接手，没有添加 experimental durable harness。
+- `bun test ./tests`：307 pass、1 个默认跳过的 Codex CLI smoke、0 fail、1681 assertions；`bunx tsc --noEmit` 通过；runtime architecture validator 通过（9 REQ、43 AC、9 个 Markdown 文件）。Gateway 首次并发 token 创建竞态已修复；lifecycle/config 回归 9 pass、0 fail、54 assertions。
+- Windows `bun run build --no-install` 成功：1230 modules、97.3 MB。一次本机构建后的 `--version` 检查输出 `0.1.0 (Microcode)`；最终重新构建后再次启动被 Windows Application Control 策略拦截，因此最终候选二进制启动检查未确认。当前本地 Bun 为 1.4.3，仓库声明 1.3.14；本轮没有真实 Codex/OpenAI OAuth 或推理 smoke。
+- 新 Pi 1.6.0 代码尚未发布新版本 tag；T-18 保留为新版本 release notes、候选 tag 的跨平台产物验收与回退演练。

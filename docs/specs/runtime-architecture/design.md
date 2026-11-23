@@ -4,7 +4,7 @@
 
 ## 当前实现与目标
 
-当前 CLI 由 Bun Runtime 持有 Agent、session 和 capabilities；`src/models/piRuntime.ts` 持有 Pi model collection、auth、stream 和 complete，Model Gateway server 只依赖模型运行合同。目标是终端 TUI 作为独立 client；外部 Model Gateway 继续只提供模型推理兼容服务。
+当前 CLI 由 Bun Runtime 持有 Agent、session 和 capabilities；`src/models/piRuntime.ts` 持有 Pi model collection、auth、stream 和 complete，Model Gateway server 只依赖模型运行合同。基础客户端是终端 TUI。新增 GUI 前端和 ACP Agent stdio endpoint 分别由[GUI 工作台规格](../agent-gui-workbench/spec.md)和[ACP Agent 规格](../acp-agent/spec.md)定义；本组不把它们耦合进 Runtime core。外部 Model Gateway 继续只提供模型推理兼容服务。
 
 终端输入 / Chalk TUI
           │ Runtime Client：命令与事件 DTO
@@ -22,6 +22,10 @@
                        └── Model provider facade ── static provider registry ── pi-ai (current adapter)
 
 ## 方案
+
+### External client/protocol boundaries
+
+`RuntimeAgentSession` 继续表示一个 Agent 实例及其单一 transcript；Runtime core 不内置 GUI view、ACP JSON-RPC transport 或跨会话 orchestration。GUI client 使用其独立的 Agent Application Client contract；ACP Agent host 使用 ACP protocol adapter 映射到现有 Runtime commands/events。两者由明确 composition boundary 接入，不互相依赖，也不把 GUI API、ACP wire DTO、Model Gateway wire DTO 混为一套协议。详见[GUI 工作台规格](../agent-gui-workbench/spec.md)与[ACP Agent 规格](../acp-agent/spec.md)。
 
 ### 1. 依赖方向
 
@@ -109,6 +113,28 @@ TUI launcher 启动或复用兼容 runtime daemon，握手通过后创建 client
 - 协议版本不兼容时拒绝 mutation command 并给出升级提示，不降级权限检查。
 - 不支持的 provider/protocol option 使用稳定错误 code、field path 与修复提示，不静默改变 safety/privacy/tool 语义。
 - 分阶段并行维护旧/new entrypoint；每步先实现 adapter、验收，再移除旧入口。session/config 格式保持不变。
+
+## 新版本依赖与 CI/CD 设计
+
+### 1. 依赖升级边界
+
+- `package.json` 和 `bun.lock` 是依赖版本的唯一运行时依据。`pi-ai` 与 `pi-agent-core` 按 Pi 发布说明选择匹配的精确版本，并检查二者传递依赖和 Bun compile 支持。
+- provider registry 继续静态 allowlist。使用锁定包内的 Codex provider/catalog，不访问动态目录；逐项审查新模型元数据以及模型 API/认证实现变更。
+- 升级审查范围包括 `src/kernel/pi/`、`src/models/providers/`、`src/models/piRuntime.ts`、compaction、OAuth 静态 loader、能力 fixture 与模型矩阵。保持 Microcode DTO、session JSONL、权限语义和 `--no-daemon` 入口兼容。
+- CI 使用本地/fake transport 和 fixtures，不调用真实 Codex/OpenAI 服务；新模型能列出和通过能力校验，不等同于真实账号的 live acceptance。
+
+### 2. GitHub Actions 流水线
+
+- PR workflow 在 Linux、Windows、macOS runner 使用仓库声明的 Bun 版本与 frozen lockfile。先跑类型检查、全套 tests 和 runtime-architecture spec validator，再对每个平台执行 `bun run build --no-install`。上传构建产物仅用于审阅，不安装到 runner 用户环境。
+- Release workflow 由 `v*` tag 触发，并等待对应原生 runner 矩阵全部成功。每个平台执行 CLI 打包，按版本/OS/architecture 命名，生成 SHA-256 checksum。所有构建上传齐全后创建 GitHub Release 并附产物/校验和。
+- Release 凭证通过 GitHub Actions 内置短期权限传递。最小化 workflow token scope；不注入模型 OAuth、API key 或 Gateway token。第三方 Action 固定到完整 commit SHA。
+- 首阶段不做代码签名、自动更新、发布到第三方包仓库或跨平台交叉编译。这些能力分别需要平台证书、更新策略或额外分发凭据，不作为本版本发布门槛。
+
+### 3. 失败与回退
+
+- PR 检查失败则不能合并。矩阵 job 明确包含 OS/架构，避免单一平台通过被误认为全平台支持。
+- tag 构建使用隔离的 staging 目录。所有矩阵产物与 checksum 验证完成前不创建正式 Release；失败时保留日志和 run 状态供修复，不生成部分发布。
+- 如 Pi 升级破坏兼容，回退 `package.json`、`bun.lock`、相应 fixture/目录变更并重跑 PR CI。既有 session/config 不参与迁移。
 
 ## 备选方案和取舍
 

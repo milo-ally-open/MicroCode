@@ -56,6 +56,7 @@ function toModelDescriptor(model: Model<Api>): ModelDescriptor {
     contextWindow: model.contextWindow,
     maxOutputTokens: model.maxTokens,
     reasoning: model.reasoning,
+    ...(model.thinkingLevelMap ? { thinkingLevelMap: Object.freeze({ ...model.thinkingLevelMap }) } : {}),
   })
 }
 

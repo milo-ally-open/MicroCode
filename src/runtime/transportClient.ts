@@ -73,7 +73,7 @@ export class RuntimeServiceClient {
     sessionId: string,
     type: RuntimeCommandType,
     payload: Record<string, unknown> = {},
-    requestId = randomUUID(),
+    requestId: string = randomUUID(),
     signal?: AbortSignal,
   ): Promise<T> {
     const command: RuntimeCommandEnvelope = {

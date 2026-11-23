@@ -53,6 +53,7 @@ USAGE
   microcode <COMMAND> [ARGS]
 
 COMMANDS
+  acp [OPTIONS]            Start the ACP Agent over stdio
   gateway [COMMAND]       Manage the Model Gateway daemon
   mcp list                List configured Model Context Protocol servers
   model list              List models available to Microcode

@@ -1,5 +1,5 @@
 import type { AgentMessage } from '@earendil-works/pi-agent-core'
-import type { JsonlSessionMetadata } from '@earendil-works/pi-agent-core/harness/session'
+import type { JsonlSessionMetadata } from '../kernel/pi/session.ts'
 import type { SessionListItem, SessionManager } from '../session/SessionManager.ts'
 import { exportSessionJsonl } from '../kernel/pi/exportSession.ts'
 import { toRuntimeMessage } from '../kernel/pi/mapper.ts'

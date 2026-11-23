@@ -5,7 +5,7 @@
 > 贡献指南：[model-provider-guide.md](model-provider-guide.md)、[tool-extension-guide.md](tool-extension-guide.md)<br>
 > Gateway 协议能力审计：[protocol-capability-matrix.md](protocol-capability-matrix.md)<br>
 > 上游 provider 能力矩阵：[provider-capability-matrix.md](provider-capability-matrix.md)<br>
-> 本文是重构目标的权威合同。现有实现及旧版本行为以代码和 [模型集成规范](../model_intergration_spec.md) 为证据；与本规格冲突的旧 provider/auth 范围在迁移完成后不再作为目标。
+> 本文是重构目标的权威合同。现有实现及旧版本行为以代码、`package.json` 和 `bun.lock` 为证据；与本规格冲突的历史 provider/auth 范围不再作为目标。
 
 ## 范围和术语
 
@@ -40,7 +40,7 @@
 
 - **AC-02.1** runtime API 覆盖 prompt、steer、follow-up、abort、wait、model/thinking 修改、session resume、compaction 和状态快照。
 - **AC-02.2** 每次工具执行都经过 runtime PermissionManager；客户端提供的事件或 tool result 不能绕过许可判定。
-- **AC-02.3** 重构不创建 Agent swarm、worker orchestration 或第二种会话核心。
+- **AC-02.3** 基础 Runtime 装配不隐式创建 Agent swarm、worker orchestration 或第二种会话核心；本 Runtime 继续按本规格定义单 Agent session owner 的生命周期和权限要求。GUI 与 ACP 的外部边界分别见[GUI 工作台规格](../agent-gui-workbench/spec.md)和[ACP Agent 规格](../acp-agent/spec.md)。
 
 **验证方式**：runtime contract tests、权限路径代码审查、session resume acceptance。
 
@@ -92,7 +92,7 @@
 
 **验收条件**
 
-- **AC-06.1** Skill/MCP source precedence、reserved IDs、legacy MCP 配置和 system managed assets 继续遵循 [系统能力规范](../system_capabilities_spec.md)。
+- **AC-06.1** Skill/MCP source precedence、reserved IDs、legacy MCP 配置和 system managed assets 遵循本 Runtime 的 source registry、MCP configuration 与 Plugin manager contracts，并由对应 fixtures 覆盖。
 - **AC-06.2** Plugin 仍组合 Skill/MCP package；Plugin 的 MCP tool call 继续遵循 PermissionManager；安装 Plugin 不会执行任意 JS。
 - **AC-06.3** UI 只通过 runtime command/event 管理 capability；MCP 生命周期和 secret redaction 留在服务端。
 
@@ -129,14 +129,30 @@
 
 **验证方式**：旧 session fixture、独立 adapter contribution walkthrough、文档审查。
 
+### REQ-09：锁定依赖升级与 CI/CD 发布
+
+**需求**：新版本必须使用经过审查和精确锁定的 Pi 依赖及模型目录。Pull request 自动验证源码与跨平台构建；版本 tag 只发布已通过验收的原生 CLI 包。
+
+**验收条件**
+
+- **AC-09.1** `pi-ai` 与 `pi-agent-core` 采用经上游兼容信息确认的精确版本组合，版本在 `package.json` 与 `bun.lock` 一致；运行时不下载或采用浮动 provider/model catalog。
+- **AC-09.2** Codex allowlist 保持 OAuth-only；provider capability fixtures 与文档逐项反映锁定目录中的模型 ID、模态、reasoning、context/output limits 和已支持的能力，不宣称未验证的在线推理可用性。
+- **AC-09.3** Pull request workflow 使用锁文件安装并执行类型检查、`bun test ./tests`、架构规格验证和 Linux/Windows/macOS 的 `bun run build --no-install`；任何检查失败都会使 workflow 失败。
+- **AC-09.4** 发布 workflow 仅由符合版本格式的 tag 触发，在原生 runner 上构建 CLI 包，检查产物名与版本，生成 SHA-256 校验和，并附加到 GitHub Release；缺少构建矩阵成功结果时不得发布。
+- **AC-09.5** CI/CD 不依赖真实模型账户或 secret；不得将 OAuth/token/credential 输出到日志或产物。真实 Codex OAuth/推理 smoke 为可选人工验收。
+- **AC-09.6** 升级不改写已有配置或 session JSONL；失败升级可通过回退精确依赖与相关 fixture 恢复已发布版本。
+
+**验证方式**：固定 Pi 目录与 provider tests、CI workflow lint/模拟、PR workflow 运行记录、tag 候选构建产物验收及发布前回退审查。
+
 ## 不变项与兼容要求
 
 - TypeScript 全栈与 Bun 运行时。
-- Microcode 保持单 Agent coding assistant；没有 GUI 或 Agent swarm。
+- 基础 CLI/TUI 路径保持单 Agent coding assistant；GUI client 与 ACP Agent endpoint 是独立功能边界，不得改变基础路径的默认行为，分别遵循[GUI 工作台规格](../agent-gui-workbench/spec.md)和[ACP Agent 规格](../acp-agent/spec.md)。
 - no-daemon 仍直接使用进程内 Pi runtime。
 - session JSONL、permission modes、Skill/MCP/Plugin 数据及已有 Gateway bind 配置不做破坏性迁移。
-- 外部 Model Gateway 当前的 loopback 默认值、host/port precedence 与公开安全限制继续遵循 [模型集成规范](../model_intergration_spec.md) 及 AGENTS.md。
+- 外部 Model Gateway 当前的 loopback 默认值、host/port precedence 与公开安全限制遵循本组的 Gateway design 和 AGENTS.md。
 - credential secrets 不进入 TUI 事件流、日志、协议错误或模型清单。
+- Gateway protocol matrix 覆盖模型推理兼容 API；ACP 会话/Agent 交互由独立[ACP Agent 规格](../acp-agent/spec.md)定义，不混入 Model Gateway 协议层。
 
 ## 数据处理和保留
 
@@ -150,7 +166,7 @@
 - 本地或远程动态执行用户提供的 JS/TS/native/WASM 工具。
 - 外部 Gateway 替客户运行 Microcode 工具、读取项目文件或保存默认 prompt。
 - 让模型 provider 插件改变权限配置、覆盖别的 provider ID 或导出 credential。
-- 增加多 Agent orchestration、web UI、hosted SaaS、多租户或远程账户服务。
+- 在本运行时架构重构范围内实现 GUI client、ACP wire protocol、hosted SaaS、多租户或远程账户服务；相关 GUI 与 ACP 边界分别见[独立工作台规格](../agent-gui-workbench/spec.md)和[ACP Agent 规格](../acp-agent/spec.md)。
 
 ## 需求追踪
 
@@ -163,6 +179,9 @@
 | 用户明确保留能力系统 | REQ-06 | src/skill、src/mcp、src/plugins | T-06 | AC-06.1 至 AC-06.3 | runtime child 持有发现、连接及 enable/refresh；测试覆盖 Plugin Skill scope/load、MCP legacy source、deny 保持、secret-safe DTO 与 capability event |
 | 用户 UI/服务端前后端分离 | REQ-07 | src/daemon、src/tui、src/main.tsx | T-07 / T-08 / T-11 / T-12 / T-13 | AC-07.1 至 AC-07.9 | 默认入口使用 runtime launcher、HTTP/SSE client 和 facades；进程 auth prompt/关闭重启/多客户端 stale 重试、断线恢复、有序退出 PID 清理、TUI event/view contract、输入遮罩、紧凑工具时间线、安全输出预览及单行连接提示均有验收；显式 `--no-daemon` 路径保留 |
 | 用户要求持续演进和兼容 | REQ-08 | tests、docs/specs/runtime-architecture | T-01 / T-09 / T-10 | AC-08.1 至 AC-08.4 | 历史 v3 JSONL fixture 可读且源文件不改写；runtime service 与 `--no-daemon` 可恢复同一 transcript；model/tool contribution guides 与 provider/protocol capability matrices 已建立并关联固定 fixtures；最终全量验收状态见 tasks.md |
+| 用户要求新版本、最新模型与自动发布 | REQ-01 / REQ-03 / REQ-08 / REQ-09 | src/kernel/pi、src/models/providers、tests、GitHub Actions、packaging | T-14 至 T-18 | AC-01.3、AC-03.1、AC-03.4、AC-08.1 至 AC-08.4、AC-09.1 至 AC-09.6 | 依赖与 Codex 目录锁定验收、跨平台 PR CI、tag release 构建和 checksum 验证；当前待实施 |
+| 本机 Agent GUI 前端 | `agent-gui-workbench` REQ-01 至 REQ-07 | `docs/specs/agent-gui-workbench/`、未来 `src/gui-workbench/` | 见 `agent-gui-workbench/tasks.md` | GUI 只依赖 Agent Application Client，不导入 Runtime/ACP/模型实现 | 目标行为由独立规格定义；尚未实施 |
+| MicroCode 作为 ACP Agent 接入编辑器 | `acp-agent` REQ-01 至 REQ-07 | `docs/specs/acp-agent/`、未来 ACP stdio host/adapter | 见 `acp-agent/tasks.md` | ACP wire contract 独立于 GUI client 和 Model Gateway；实现尚未开始 |
 
 ## 假设与未决问题
 
@@ -180,4 +199,7 @@
 | 2026-10-30 | 增加 AC-07.7，规定交互式退出时等待 Runtime 与临时 Gateway 子进程退出；显式 Gateway start 仍可持久运行 |
 | 2026-10-30 | 增加 AC-07.8，规定工具时间线紧凑布局及展开输出的控制码/终端列宽处理 |
 | 2026-10-30 | 增加 AC-07.9，规定重连状态通知按状态切换发送并复用单条 TUI 提示行 |
+| 2026-11-23 | 明确基础 Runtime 保持单 Agent owner；用户指定的可选多 Agent 工作台由独立规格定义，并通过隔离的 AgentRun 组合 Runtime |
+| 2026-11-24 | 明确工作台 GUI client 由独立规格定义；基础 CLI/TUI 默认路径不变 |
+| 2026-11-24 | 将 GUI 前端与 ACP Agent 协议分别移至独立规格组；本组只定义 MicroCode Runtime 内部边界 |
 | 2026-10-27 | 初稿：定义层边界、初始 provider/auth 白名单、四种网关协议、工具变更和客户端/服务端分离 |

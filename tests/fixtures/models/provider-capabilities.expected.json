@@ -1,12 +1,13 @@
 {
-  "piAiVersion": "0.87.1",
+  "piAiVersion": "1.6.0",
   "providers": [
     {
       "id": "openai-codex",
       "authModes": ["oauth"],
       "api": "openai-codex-responses",
       "models": [
-        { "id": "gpt-5.5", "input": ["text", "image"], "reasoning": true, "contextWindow": 272000, "maxOutputTokens": 128000 }
+        { "id": "gpt-6.2-sol", "input": ["text", "image"], "reasoning": true, "contextWindow": 500000, "maxOutputTokens": 128000, "thinkingLevelMap": { "off": null, "minimal": "low", "low": "low", "medium": "medium", "high": "high", "xhigh": "xhigh", "max": "max" } },
+        { "id": "gpt-6.2-astra", "input": ["text", "image"], "reasoning": true, "contextWindow": 272000, "maxOutputTokens": 128000, "thinkingLevelMap": { "off": null, "minimal": "low", "low": "low", "medium": "medium", "high": "high", "xhigh": "xhigh", "max": "max" } }
       ]
     },
     {
@@ -14,7 +15,8 @@
       "authModes": ["api_key"],
       "api": "openai-responses",
       "models": [
-        { "id": "gpt-5.5", "input": ["text", "image"], "reasoning": true, "contextWindow": 272000, "maxOutputTokens": 128000 },
+        { "id": "gpt-6.2-sol", "input": ["text", "image"], "reasoning": true, "contextWindow": 272000, "maxOutputTokens": 128000, "thinkingLevelMap": { "off": null, "minimal": null, "low": "low", "medium": "medium", "high": "high", "xhigh": "xhigh", "max": "max" } },
+        { "id": "gpt-6.2-astra", "input": ["text", "image"], "reasoning": true, "contextWindow": 272000, "maxOutputTokens": 128000, "thinkingLevelMap": { "off": null, "minimal": null, "low": "low", "medium": "medium", "high": "high", "xhigh": "xhigh", "max": "max" } },
         { "id": "gpt-4o", "input": ["text", "image"], "reasoning": false, "contextWindow": 128000, "maxOutputTokens": 16384 }
       ]
     },

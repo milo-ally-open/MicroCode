@@ -54,37 +54,6 @@ export function createPiModelMessageMapper(getModel: () => Model<Api>) {
           return [message as Message]
         }
 
-        case 'bashExecution':
-          return [{
-            role: 'user' as const,
-            content: `Command: ${message.command}\nOutput: ${message.output}`,
-            timestamp: message.timestamp,
-          }] as Message[]
-
-        case 'compactionSummary':
-          return [{
-            role: 'user' as const,
-            content: `[Previous conversation summary]\n${message.summary}`,
-            timestamp: message.timestamp,
-          }] as Message[]
-
-        case 'branchSummary':
-          return [{
-            role: 'user' as const,
-            content: `[Branch summary]\n${message.summary}`,
-            timestamp: message.timestamp,
-          }] as Message[]
-
-        case 'custom':
-          if (typeof message.content === 'string') {
-            return [{
-              role: 'user' as const,
-              content: message.content,
-              timestamp: message.timestamp,
-            }] as Message[]
-          }
-          return []
-
         default:
           return []
       }
@@ -137,15 +106,68 @@ function mapResultContent(content: ToolResultMessage['content']): Extract<Runtim
   }) as Extract<RuntimeMessage, { role: 'tool_result' }>['content']
 }
 
-function mapSimpleContent(content: TextContent | ImageContent):
-  | { type: 'text'; text: string }
-  | { type: 'image'; data: string; mime_type: string } {
-  return content.type === 'image'
-    ? { type: 'image', data: content.data, mime_type: content.mimeType }
-    : { type: 'text', text: content.text }
+function mapLegacyCustomContent(value: unknown): Array<{ type: 'text'; text: string } | { type: 'image'; data: string; mime_type: string }> {
+  if (!Array.isArray(value)) return [{ type: 'text', text: String(value ?? '') }]
+  return value.map((block) => {
+    if (!block || typeof block !== 'object') return { type: 'text', text: String(block ?? '') }
+    const candidate = block as Record<string, unknown>
+    if (candidate.type === 'image' && typeof candidate.data === 'string') {
+      return { type: 'image', data: candidate.data, mime_type: String(candidate.mimeType ?? 'application/octet-stream') }
+    }
+    if (candidate.type === 'text' && typeof candidate.text === 'string') return { type: 'text', text: candidate.text }
+    return { type: 'text', text: JSON.stringify(candidate) }
+  })
 }
 
 export function toRuntimeMessage(message: AgentMessage): RuntimeMessage {
+  const role = (message as { role: string }).role
+  const extended = message as AgentMessage & {
+    microcodeKind?: string
+    microcodeLegacyMessage?: Record<string, unknown>
+  }
+  const legacy = extended.microcodeLegacyMessage ?? (
+    ['system', 'user', 'assistant', 'toolResult'].includes(role)
+      ? undefined
+      : message as unknown as Record<string, unknown>
+  )
+  if (legacy) {
+    if (legacy.role === 'bashExecution') {
+      return {
+        role: 'command_activity',
+        command: String(legacy.command ?? ''),
+        output: String(legacy.output ?? ''),
+        exit_code: typeof legacy.exitCode === 'number' ? legacy.exitCode : null,
+        cancelled: Boolean(legacy.cancelled),
+        truncated: Boolean(legacy.truncated),
+        ...(typeof legacy.fullOutputPath === 'string' ? { full_output_path: legacy.fullOutputPath } : {}),
+        timestamp: message.timestamp,
+      }
+    }
+    if (legacy.role === 'compactionSummary' || legacy.role === 'branchSummary') {
+      return {
+        role: 'summary',
+        kind: legacy.role === 'compactionSummary' ? 'compaction' : 'branch',
+        summary: String(legacy.summary ?? ''),
+        ...(typeof legacy.fromId === 'string' ? { from_id: legacy.fromId } : {}),
+        ...(typeof legacy.tokensBefore === 'number' ? { tokens_before: legacy.tokensBefore } : {}),
+        timestamp: message.timestamp,
+      }
+    }
+    if (legacy.role === 'custom') {
+      return {
+        role: 'custom',
+        kind: String(legacy.customType ?? 'custom'),
+        content: typeof legacy.content === 'string'
+          ? legacy.content
+          : mapLegacyCustomContent(legacy.content),
+        display: legacy.display !== false,
+        timestamp: message.timestamp,
+      }
+    }
+  }
+  if (extended.microcodeKind === 'task-reminder') {
+    return { role: 'custom', kind: 'task-reminder', content: String(message.content), display: false, timestamp: message.timestamp }
+  }
   switch (message.role) {
     case 'system':
       return {
@@ -189,42 +211,6 @@ export function toRuntimeMessage(message: AgentMessage): RuntimeMessage {
         content: mapResultContent(message.content),
         ...(message.details === undefined ? {} : { details: jsonValue(message.details) }),
         is_error: message.isError,
-        timestamp: message.timestamp,
-      }
-    case 'bashExecution':
-      return {
-        role: 'command_activity',
-        command: message.command,
-        output: message.output,
-        exit_code: message.exitCode ?? null,
-        cancelled: message.cancelled,
-        truncated: message.truncated,
-        ...(message.fullOutputPath ? { full_output_path: message.fullOutputPath } : {}),
-        timestamp: message.timestamp,
-      }
-    case 'custom':
-      return {
-        role: 'custom',
-        kind: message.customType,
-        content: typeof message.content === 'string' ? message.content : message.content.map(mapSimpleContent),
-        display: message.display,
-        ...(message.details === undefined ? {} : { details: jsonValue(message.details) }),
-        timestamp: message.timestamp,
-      }
-    case 'branchSummary':
-      return {
-        role: 'summary',
-        kind: 'branch',
-        summary: message.summary,
-        from_id: message.fromId,
-        timestamp: message.timestamp,
-      }
-    case 'compactionSummary':
-      return {
-        role: 'summary',
-        kind: 'compaction',
-        summary: message.summary,
-        tokens_before: message.tokensBefore,
         timestamp: message.timestamp,
       }
     default: {

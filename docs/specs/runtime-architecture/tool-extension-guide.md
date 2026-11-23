@@ -1,6 +1,6 @@
 # 新工具接入与运行时变更指南
 
-本文规定工具如何作为独立 GitHub feature 接入，以及 Agent 如何改变本会话的工具集合。安装目录 Plugin 的 Skill/MCP 语义由 [Plugin 规范](../plugin_system_spec.md)决定；安装的 Plugin 不执行 JavaScript。
+本文规定工具如何作为独立 GitHub feature 接入，以及 Agent 如何改变本会话的工具集合。Plugin 的 Skill/MCP source、trust 与生命周期以本组 Runtime capability contracts 和 `src/plugins/PluginManager.ts` 为准；安装的 Plugin 不执行 JavaScript。
 
 ## 工具模块边界
 

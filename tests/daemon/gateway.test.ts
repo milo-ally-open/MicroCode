@@ -330,7 +330,7 @@ describe('Model Gateway HTTP and protocol contracts', () => {
     expect(JSON.stringify(defaultOutput)).not.toContain(summaryText)
     expect(defaultOutput.output).toHaveLength(1)
 
-    const summaryModel = { ...model, api: 'openai-responses' } as Model<any>
+    const summaryModel = { ...model, api: 'openai-responses', thinkingLevelMap: undefined } as Model<any>
     let capturedSummary: string | undefined
     const summaryRuntime = createRuntime({
       resolveModel: () => summaryModel,

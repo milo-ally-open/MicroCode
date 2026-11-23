@@ -96,7 +96,7 @@ After installing, launch Microcode from the project you want to work on:
 microcode                         # Start in the current directory
 microcode --resume                # Resume the latest session for this directory
 microcode --resume abc12345       # Resume a session by ID prefix
-microcode --model openai-codex/gpt-5.6-luna
+microcode --model openai-codex/gpt-6.2-sol
 microcode --permission plan
 microcode --thinking high
 microcode --help
@@ -189,7 +189,9 @@ Legacy custom model entries in `~/.microcode/config.json` or `.microcode/config.
 
 The supported custom-model `api` values and fields belong to the legacy config format. These models are not currently available in `/model` or `microcode model list`. See [the runtime architecture model-provider guide](docs/specs/runtime-architecture/model-provider-guide.md) for the approved provider policy and the reviewed path for adding support.
 
-See [the model integration and gateway spec](docs/specs/model_intergration_spec.md) for the model catalog, authentication, direct integration, and harness-independent gateway design.
+See the [runtime architecture specification](docs/specs/runtime-architecture/spec.md) and [model provider guide](docs/specs/runtime-architecture/model-provider-guide.md) for provider policy, authentication, direct integration, and Gateway boundaries.
+
+The planned [Agent GUI workbench](docs/specs/agent-gui-workbench/spec.md) is a separate client contract. MicroCode's planned [ACP Agent support](docs/specs/acp-agent/spec.md) is a separate stdio protocol entry point; ACP is not the GUI's application API.
 
 ## CLI runtime and Model Gateway
 

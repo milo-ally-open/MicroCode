@@ -3,7 +3,7 @@
 > 状态：方案已起草；按任务分阶段实施<br>
 > 路径：跨边界高风险<br>
 > 负责人：Microcode maintainers<br>
-> 上游合同：[现有模型与网关规范](../model_intergration_spec.md)、[系统能力规范](../system_capabilities_spec.md)、[Plugin 规范](../plugin_system_spec.md)、[工具呈现合同](../tool_agent_presentation_contract_spec.md)
+> 上游合同：本组的 [模型供应商指南](model-provider-guide.md)、[工具扩展指南](tool-extension-guide.md)；Provider API 事实以锁定依赖与实现为准。
 
 ## 背景与问题
 
@@ -34,8 +34,10 @@
 
 ### 本次不包含 / 保持不变
 
-- 不引入 GUI、Agent swarm、动态 JavaScript 插件执行、插件安装脚本或远程代码加载。
-- 不更换 Bun、TypeScript、pi-ai 或 pi-agent-core；Pi 仍是当前 kernel 实现。
+- 本组不实现 GUI 前端；GUI 独立合同见[Agent GUI 工作台规格](../agent-gui-workbench/spec.md)。
+- 本组不实现 ACP Agent endpoint；ACP v1/stdin/stdout protocol boundary 见[ACP Agent 规格](../acp-agent/spec.md)。ACP adapter 不改变本组定义的 Runtime 行为。
+- 不引入 Agent swarm、动态 JavaScript 插件执行、插件安装脚本或远程代码加载。
+- 保留 Bun、TypeScript 与 Pi kernel 实现；按已验收的 T-14/T-15 将配套 `pi-ai` / `pi-agent-core` 固定升级到 1.6.0。
 - 不把外部模型网关变成 Agent harness；外部协议请求只完成模型推理和协议转换，不执行工具。
 - 不让 TUI 直接持有 provider credential、MCP process/client 或 session writer。
 - Git/worktree 与一般任务管理保持为独立可选能力，不成为 Agent orchestration。
@@ -47,7 +49,7 @@
 - src/models/registry.ts 用 builtinModels() 初始化共享集合，并在同一模块加载自定义 provider；src/models/authChoices.ts 从每个 provider 的 auth 描述生成登录选项。
 - src/agent/MicrocodeAgent.ts 将 pi-agent-core Agent 包在 MicrocodeAgent API 后；src/agent/AgentToolManager.ts 已支持运行期间 addTools、removeTools、MCP 重配及模型感知的核心工具重建。
 - src/tools/registry.ts 持有工具 Agent、policy 和 presentation 合同；src/plugins/PluginManager.ts 解析本地 Plugin 并以 Skills/MCP 贡献能力。
-- package.json 与 bun.lock 将 @earendil-works/pi-ai 和 @earendil-works/pi-agent-core 固定为 0.87.1；本方案不以移动的上游 main 分支代替锁定版本。
+- package.json 与 bun.lock 当前将 @earendil-works/pi-ai 和 @earendil-works/pi-agent-core 固定为 1.6.0；本方案不以移动的上游 main 分支代替锁定版本。
 - 仓库要求单 Agent、测试位于 tests/、保留现有 capability 规范和 Gateway 安全说明。
 
 ## 已确认决定与技术假设
@@ -57,6 +59,23 @@
 - **解释假设：**Gemini 与 Anthropic Messages 在第一阶段是外部客户端协议，不自动意味着允许 Gemini 或 Anthropic 上游账户凭据。上游供应商白名单与入口协议矩阵分别配置。
 - **技术假设：**“插件式”模型/工具表示构建时注册、经评审的 TypeScript 扩展；安装目录里的 Plugin 仍仅组合 Skills/MCP，不执行任意代码。
 - **技术假设：**后端服务仅在回环地址提供 Agent runtime API；可配置外部 bind 的 Model Gateway 与 runtime API 使用独立认证和监听边界。
+
+## 新版本与自动发布流水线计划与执行状态
+
+用户决定为 MicroCode 准备一个新版本，以便更新底层 Pi 依赖并接入最新模型，同时建立 CI/CD 流水线。T-14 至 T-17 已完成，Pi 1.6.0 adapter 与模型能力验收见 `tasks.md`；PR CI 和 `v0.1.0` Release workflow 均已真实运行成功。T-18 的新版本 release notes、产物验收和回退材料仍待完成。
+
+本次将 `@earendil-works/pi-ai` 和 `@earendil-works/pi-agent-core` 精确固定到 1.6.0，并更新 Codex provider 能力 fixture 与 Pi adapter。Pi 1.6 移除了旧版 experimental harness/session、Node filesystem 与 summary helper，MicroCode 以仓库内适配层保留 JSONL v3、compaction 和旧 transcript 读取。GitHub Actions CI 与六平台 tag release workflow 已完成并通过真实运行。
+
+实施顺序建议如下：
+
+1. **已完成：**核对 Pi `v1.6.0` 配套包、Codex OAuth/Responses 与包 exports，精确锁定 `pi-ai` / `pi-agent-core`，不接入运行时动态目录。
+2. **已完成：**更新 provider fixture 与能力矩阵，固定 GPT-6.2 Sol/Astra 的 ID、模态、推理等级映射、上下文/输出限制；保持 Codex OAuth 白名单。
+3. **已完成：**迁移 session/compaction/message adapter，并验收 stream/tool mapping、取消、旧 session 与 `--no-daemon`；未支持的推理等级在 inference 前拒绝。
+4. **已完成：**PR CI 运行 TypeScript 检查、全量测试、架构规格校验和 Linux/Windows/macOS `build --no-install`。
+5. **已完成：**tag release CD 在六个平台/架构构建 CLI、生成 SHA-256 checksum 并发布 GitHub Release；`v0.1.0` workflow 全部成功。
+6. **进行中：**新 Pi 版本发布前仍需整理专属 release notes 并对新版本候选 tag 完成发布验收；Codex OAuth 和真实推理 smoke 不纳入无凭据 CI。
+
+分阶段回退：依赖升级单独提交并精确锁版本；若上游适配失败，可回退依赖与关联 fixture。CI 失败阻止合并；tag 构建失败不创建正式 Release。数据格式和已保存 session 不迁移。
 
 ## 备选方案与建议
 

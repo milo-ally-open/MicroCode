@@ -4,8 +4,12 @@ import type { ModelProviderAdapter } from './types.ts'
 
 function openaiGptProvider(): Provider {
   const provider = openaiProvider()
+  // Pi 1.6 adds OAuth to the general OpenAI provider. MicroCode keeps its
+  // established API-key-only auth contract; Codex OAuth remains separate.
+  const { oauth: _oauth, ...auth } = provider.auth
   return {
     ...provider,
+    auth,
     getModels: () => provider.getModels().filter((model) =>
       model.id.startsWith('gpt-') && !model.id.startsWith('gpt-realtime-'),
     ),

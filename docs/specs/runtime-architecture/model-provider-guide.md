@@ -14,8 +14,8 @@ Gemini Generate Content 和 Anthropic Messages 首批表示 Gateway 入口 diale
 ## 每个 feature 的实施步骤
 
 1. 从当前 main 建立独立 GitHub feature branch；限定提交只实现一个 provider feature。
-2. 阅读 AGENTS.md、本文、[model integration spec](../model_intergration_spec.md) 和 package.json/bun.lock，记录 pi-ai 与 pi-agent-core 锁定版本。
-3. 阅读 live pi-ai README 和目标 provider source 作为发现资料；核对 node_modules 中精确 0.87.1 声明和实现。版本不匹配时不照搬 moving main 代码。
+2. 阅读 AGENTS.md、本文、[runtime architecture spec](spec.md) 和 package.json/bun.lock，记录 pi-ai 与 pi-agent-core 锁定版本。
+3. 阅读 live pi-ai README 和目标 provider source 作为发现资料；核对 node_modules 中精确锁定版本的声明和实现。版本不匹配时不照搬 moving main 代码。
 4. 确认锁定版本是否提供所需 provider factory。当前存在 openaiProvider、deepseekProvider、openaiCodexProvider；从 provider-specific import path 导入并复用 Pi factory。当前 OpenAI registration 仅公开 `gpt-*`，并排除 Realtime catalog entries。
 5. 在 src/models/providers/ 下为该贡献新增独立 adapter 文件，通过受控 registry 注册 provider ID、显示名、正整数 adapter version、auth modes、模型/API 能力和 Pi factory；registry aggregator 只需增加一项引用。模块不缓存 provider secret，不重复实现 HTTP API。
 6. Registry 校验 ID 唯一、provider 在 build allowlist 内、auth mode 允许、model api 可映射到已注册 client capability。目录列出 provider/model、输入、contextWindow、maxTokens、reasoning 能力和 locked catalog source。
@@ -78,4 +78,4 @@ Pi implementation 留在 adapter 内部。Microcode API 不返回 Pi Provider、
 
 ## 本次核对记录
 
-2026-10-28：package.json 与 bun.lock 固定 pi-ai/pi-agent-core 0.87.1；安装的 pi-ai 声明导出 createModels/createProvider 及 openai/deepseek/openai-codex factories，认证和 API 实现由 Pi provider 管理。`tests/fixtures/models/provider-capabilities.expected.json` 与 provider fixture tests 现覆盖三项 allowlisted provider/API/auth 组合、代表模型 modality/reasoning/context/output metadata、API-key/OAuth facade 生命周期、usage，以及 image/reasoning 不支持时在 inference 前拒绝。DeepSeek stream fixture 使用锁定 Pi adapter 和本地 SSE 服务；Codex/OpenAI 未发送实时上游请求。具体验收记录见 `docs/specs/runtime-architecture/tasks.md`。
+2026-11-24：package.json 与 bun.lock 固定 `pi-ai` / `pi-agent-core` 1.6.0。Pi 1.6 移除了 agent-core 的 experimental harness/session、Node filesystem 与 summary helpers；MicroCode 在 `src/kernel/pi/` 内保留 JSONL v3、compaction 与 legacy transcript adapter，不引入 experimental `pi-durable`。Codex 与 OpenAI fixture 固定 GPT-6.2 Sol/Astra 的 ID、输入模态、推理等级映射、上下文和输出上限；OpenAI GPT 仍仅允许 API-key auth，Codex 仍仅允许 OAuth。Gateway 对 OpenAI GPT-6.2 不支持的 `minimal` reasoning level 在 inference 前拒绝。全量测试、类型检查、架构 validator 和 Windows `build --no-install` 通过；Codex/OpenAI 未发送真实上游请求。具体验收记录见 `docs/specs/runtime-architecture/tasks.md`。

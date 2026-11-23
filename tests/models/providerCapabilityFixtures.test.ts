@@ -1,8 +1,8 @@
 import { describe, expect, test } from 'bun:test'
 import { createModels, InMemoryCredentialStore } from '@earendil-works/pi-ai'
 import { openaiCodexProvider } from '@earendil-works/pi-ai/providers/openai-codex'
-import { openaiProvider } from '@earendil-works/pi-ai/providers/openai'
 import { deepseekProvider } from '@earendil-works/pi-ai/providers/deepseek'
+import { openAiGptModelProvider } from '../../src/models/providers/openai.ts'
 import { createGatewayServer } from '../../src/daemon/server.ts'
 import type { GatewayModelRuntime, GatewayServerHandle } from '../../src/daemon/types.ts'
 import type { ModelCompletion, ModelInferenceContext, ModelRuntimeDescriptor } from '../../src/models/inference.ts'
@@ -19,7 +19,7 @@ describe('fixed provider capability fixtures', () => {
         id: string
         authModes: string[]
         api: string
-        models: Array<{ id: string; input: string[]; reasoning: boolean; contextWindow: number; maxOutputTokens: number }>
+        models: Array<{ id: string; input: string[]; reasoning: boolean; contextWindow: number; maxOutputTokens: number; thinkingLevelMap?: Record<string, string | null> }>
       }>
     }
     const installedPiAi = await Bun.file(new URL('../../node_modules/@earendil-works/pi-ai/package.json', import.meta.url)).json() as { version: string }
@@ -39,6 +39,7 @@ describe('fixed provider capability fixtures', () => {
           reasoning: expectedModel.reasoning,
           contextWindow: expectedModel.contextWindow,
           maxOutputTokens: expectedModel.maxOutputTokens,
+          ...(expectedModel.thinkingLevelMap ? { thinkingLevelMap: expectedModel.thinkingLevelMap } : {}),
         })
       }
     }
@@ -46,7 +47,7 @@ describe('fixed provider capability fixtures', () => {
 
   test('exercises API-key and OAuth auth fixtures without vendor calls or secret disclosure', async () => {
     for (const [providerId, createProvider, promptLabel] of [
-      ['openai', openaiProvider, 'Enter OpenAI API key'],
+      ['openai', openAiGptModelProvider.createPiProvider, 'Enter OpenAI API key'],
       ['deepseek', deepseekProvider, 'Enter DeepSeek API key'],
     ] as const) {
       const models = createModels({ credentials: new InMemoryCredentialStore() })
@@ -106,7 +107,8 @@ describe('fixed provider capability fixtures', () => {
   test('rejects image and reasoning requests when the selected model fixture lacks that capability', async () => {
     const cases = await Bun.file(new URL('../fixtures/models/capability-rejections.expected.json', import.meta.url)).json() as Array<{
       modelId: string
-      feature: 'image' | 'reasoning'
+      feature: 'image' | 'reasoning' | 'reasoning_level'
+      level?: string
       status: number
       message: string
     }>
@@ -122,6 +124,7 @@ describe('fixed provider capability fixtures', () => {
         contextWindow: entry.contextWindow,
         maxTokens: entry.maxOutputTokens,
         reasoning: entry.reasoning,
+        ...(entry.thinkingLevelMap ? { thinkingLevelMap: entry.thinkingLevelMap } : {}),
         cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
       }
       let inferenceCalls = 0
@@ -143,7 +146,7 @@ describe('fixed provider capability fixtures', () => {
       try {
         const payload = expected.feature === 'image'
           ? { model: expected.modelId, messages: [{ role: 'user', content: [{ type: 'image_url', image_url: { url: 'data:image/png;base64,aGVsbG8=' } }] }] }
-          : { model: expected.modelId, messages: [{ role: 'user', content: 'Reason with care.' }], reasoning_effort: 'high' }
+        : { model: expected.modelId, messages: [{ role: 'user', content: 'Reason with care.' }], reasoning_effort: expected.level ?? 'high' }
         const response = await fetch('http://' + handle.hostname + ':' + handle.port + '/v1/chat/completions', {
           method: 'POST',
           headers: { authorization: 'Bearer provider-capability-token', 'content-type': 'application/json' },

@@ -3,10 +3,7 @@ import { randomUUID } from 'node:crypto'
 import { AgentToolSnapshotConflictError, createMicrocodeAgentRuntime, type PiMicrocodeAgent, type MicrocodeAgentEvent } from '../../agent/index.ts'
 import type { PiMicrocodeAgentOptions } from '../../agent/piRuntimeAdapter.ts'
 import { PERMISSION_MODES, type PermissionMode } from '../../permissions/index.ts'
-import type {
-  JsonlSessionMetadata,
-} from '@earendil-works/pi-agent-core/harness/session'
-import { PiJsonlSessionStore, piSessionTranscriptAdapter } from '../../kernel/pi/session.ts'
+import { PiJsonlSessionStore, piSessionTranscriptAdapter, type JsonlSessionMetadata } from '../../kernel/pi/session.ts'
 import { SessionManager } from '../../session/SessionManager.ts'
 import { GitRepository } from '../../git/GitRepository.ts'
 import { toRuntimeMessage } from '../../kernel/pi/mapper.ts'

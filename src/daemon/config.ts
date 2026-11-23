@@ -206,6 +206,22 @@ export async function readGatewayToken(): Promise<string | undefined> {
   }
 }
 
+async function readTokenAfterConcurrentCreate(path: string): Promise<string | undefined> {
+  // The winning process creates the file before writing its token. Give that
+  // short write window time to finish instead of treating an empty file as a
+  // permanently failed startup race.
+  for (let attempt = 0; attempt < 30; attempt++) {
+    try {
+      const token = (await readFile(path, 'utf8')).trim()
+      if (token) return token
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error
+    }
+    await new Promise((resolve) => setTimeout(resolve, 10))
+  }
+  return undefined
+}
+
 export async function createGatewayToken(): Promise<string> {
   await ensureGatewayDirectory()
   const token = randomBytes(32).toString('hex')
@@ -244,7 +260,7 @@ export async function getOrCreateGatewayToken(): Promise<string> {
     return candidate
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code !== 'EEXIST') throw error
-    const raced = await readGatewayToken()
+    const raced = await readTokenAfterConcurrentCreate(getGatewayTokenPath())
     if (raced) return raced
     throw error
   }
@@ -270,7 +286,7 @@ export async function getOrCreateGatewayRpcToken(): Promise<string> {
     return candidate
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code !== 'EEXIST') throw error
-    const raced = (await readFile(path, 'utf8')).trim()
+    const raced = await readTokenAfterConcurrentCreate(path)
     if (raced) return raced
     throw error
   }

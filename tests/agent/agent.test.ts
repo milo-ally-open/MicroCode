@@ -311,14 +311,14 @@ describe('agent modules', () => {
 
   test('a restored context above 100% forces compaction before the first model request', async () => {
     ensureBootstrapMacro()
-    const model = resolveAgentModelConfig('gpt-5.6-luna', 'openai-codex-responses').model
+    const model = resolveAgentModelConfig('gpt-6.2-sol', 'openai-codex-responses').model
     let agent!: PiMicrocodeAgent
     let summaryCalls = 0
     let promptWasPresentWhenSummarizing = true
     const observedContexts: string[] = []
     agent = createMicrocodeAgentRuntime({
       cwd: process.cwd(),
-      modelId: 'gpt-5.6-luna',
+      modelId: 'gpt-6.2-sol',
       api: 'openai-codex-responses',
       permission: { mode: 'auto-approve' },
       compactionSettings: { enabled: false },
@@ -389,11 +389,11 @@ describe('agent modules', () => {
 
   test('over-limit context still summarizes after microcompacting old tool results', async () => {
     ensureBootstrapMacro()
-    const model = resolveAgentModelConfig('gpt-5.6-luna', 'openai-codex-responses').model
+    const model = resolveAgentModelConfig('gpt-6.2-astra', 'openai-codex-responses').model
     let summaryCalls = 0
     const agent = createMicrocodeAgentRuntime({
       cwd: process.cwd(),
-      modelId: 'gpt-5.6-luna',
+      modelId: 'gpt-6.2-astra',
       api: 'openai-codex-responses',
       compactionSettings: { enabled: false },
       summarize: async () => {

@@ -622,6 +622,11 @@ class GatewayRequestHandler {
         throw new GatewayProtocolError('The selected model does not support image input.')
       }
       if (parsed.options.reasoning && !model.reasoning) throw new GatewayProtocolError('The selected model does not support reasoning controls.')
+      if (parsed.options.reasoning && model.api === 'openai-responses' && model.thinkingLevelMap &&
+        Object.hasOwn(model.thinkingLevelMap, parsed.options.reasoning) &&
+        model.thinkingLevelMap[parsed.options.reasoning] === null) {
+        throw new GatewayProtocolError(`The selected model does not support the "${parsed.options.reasoning}" reasoning level.`)
+      }
       if (parsed.options.reasoningSummary) {
         if (!model.reasoning) throw new GatewayProtocolError('The selected model does not support reasoning summaries.')
         if (!['openai-responses', 'openai-codex-responses', 'azure-openai-responses'].includes(model.api)) {

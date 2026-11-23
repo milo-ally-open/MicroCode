@@ -9,6 +9,7 @@ export interface ModelDescriptor {
   readonly contextWindow: number
   readonly maxOutputTokens: number
   readonly reasoning: boolean
+  readonly thinkingLevelMap?: Readonly<Record<string, string | null>>
 }
 
 export interface ModelProviderDescriptor {
