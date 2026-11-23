@@ -117,7 +117,7 @@ export async function archiveDirectory(sourceDir: string, artifactBase: string):
     const archivePath = `${artifactBase}.zip`
     await removeWithRetry(archivePath)
     await run([
-      'powershell',
+      'pwsh',
       '-NoProfile',
       '-Command',
       `Compress-Archive -Path ${JSON.stringify(sourceDir)} -DestinationPath ${JSON.stringify(archivePath)} -Force`,
